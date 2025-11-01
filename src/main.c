@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
-#include "entity/struct.h"
+#include "../include/struct.h"
 
 int main() {
     SDL_Init(SDL_INIT_VIDEO);
@@ -14,7 +14,15 @@ int main() {
 
 
     //test pour check si l'arborescence fonctionne
-    printf("Goblin HP: %d\n", Goblin.hp);
-    printf("Orc Attack: %d\n", Orc.attack);
+    printf("test entités\n\n");
+
+    showEntity(Goblin);
+    showEntity(Orc);
+    printf("\n\n");
+
+    int dmg = attack_classic(&Goblin, &Orc);
+    printf("Goblin attaque Orc et fait %d dégat\n", dmg);
+    printf("hp restant de l'orc : %d \n", Orc.hp);
+
     return 0;
 }
