@@ -3,6 +3,7 @@
 
 typedef struct {
     int hp;
+    int maxHp;
     int attack;
     int defense;
     float range;
@@ -12,8 +13,18 @@ typedef struct {
 
 extern entity Goblin;
 extern entity Orc;
+extern entity Skeleton;
+extern entity Troll;
+extern entity enemies[4];
+extern int enemyCount;
 
+void initEnemies(void);
 void showEntity(entity e);
 int attack_classic(entity *attacker, entity *target);
+void startCombat(entity *player, entity *enemy);
+entity randomEnemy();
+void resetEntity(entity *e);
+
+
 
 #endif
