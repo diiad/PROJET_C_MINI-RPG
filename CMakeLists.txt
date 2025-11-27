@@ -5,9 +5,17 @@ project(RPG_C C)
 set(CMAKE_C_STANDARD 11)
 
 # Dossier include (Tes headers SDL sont dans include/SDL2)
-include_directories(
-        ${CMAKE_SOURCE_DIR}/include
-)
+if(APPLE)
+    include_directories(${CMAKE_SOURCE_DIR}/include/macos)
+endif()
+
+if(WIN32)
+    include_directories(${CMAKE_SOURCE_DIR}/include/windows)
+endif()
+
+if(UNIX AND NOT APPLE)
+    include_directories(${CMAKE_SOURCE_DIR}/include/linux)
+endif()
 
 # Exécutable principal
 add_executable(RPG_C
