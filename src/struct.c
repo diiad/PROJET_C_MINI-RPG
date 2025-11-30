@@ -34,7 +34,7 @@ entity Troll={
     .range = 30
 };
 
-entity enemies[];
+entity enemies[4];
 
 int enemyCount = 4;
 
