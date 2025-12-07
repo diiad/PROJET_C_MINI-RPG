@@ -2,8 +2,8 @@
 #define INTERFACE_H
 
 void clearScreen();
-void afficherMenuPrincipale();
-int choixMenuPrincipale();
+void afficherMenuPrincipal();
+int choixMenuPrincipal();
 
 void afficherMenuClasses();
 int choixClasse();
