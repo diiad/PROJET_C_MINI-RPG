@@ -34,7 +34,7 @@ void afficherMenuPrincipal() {
     printf("==== MINI RPG ====\n");
     printf("1. Jouer\n");
     printf("2. Choisir une classe\n");
-    pritnf("3. Quitter\n");
+    printf("3. Quitter\n");
     printf("===================\n");
 }
 
@@ -45,7 +45,7 @@ int choixMenuPrincipal() {
 
 
 void afficherMenuClasses() {
-    clearScreen()
+    clearScreen();
     printf("==== CHOIX DES CLASSES ====\n");
     printf("1. Guerrier (Tank)\n");
     printf("2. Archer (Distance)\n");
