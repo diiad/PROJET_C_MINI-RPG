@@ -3,9 +3,25 @@
 #include <string.h>
 #include "../include/map_editor.h"
 
+#if defined(_WIN32)
+#  include <direct.h>
+#else
+#  include <sys/stat.h>
+#  include <sys/types.h>
+#endif
+
 char mapGrid[MAP_H][MAP_W];
 
 void sauvegarderMap() {
+    // S'assurer que les dossiers existent
+#if defined(_WIN32)
+    _mkdir("assets");
+    _mkdir("assets/maps");
+#else
+    mkdir("assets", 0777);
+    mkdir("assets/maps", 0777);
+#endif
+
     FILE *f = fopen("assets/maps/map1.map", "w");
     if(!f) {
         printf("Impossible d'ouvrir le fichier de sauvegarde.\n");
@@ -24,7 +40,10 @@ void sauvegarderMap() {
 }
 
 void lancerEditeurMap() {
-    SDL_Init(SDL_INIT_VIDEO);
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        printf("SDL_Init error: %s\n", SDL_GetError());
+        return;
+    }
 
     SDL_Window *win = SDL_CreateWindow(
         "Editeur de Carte - MINI RPG",
@@ -32,10 +51,21 @@ void lancerEditeurMap() {
         MAP_W * TILE, MAP_H * TILE,
         SDL_WINDOW_SHOWN
     );
+    if (!win) {
+        printf("SDL_CreateWindow error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return;
+    }
 
     SDL_Renderer *ren = SDL_CreateRenderer(
         win, -1, SDL_RENDERER_ACCELERATED
     );
+    if (!ren) {
+        printf("SDL_CreateRenderer error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return;
+    }
 
     memset(mapGrid, '.', sizeof(mapGrid));
 
@@ -69,22 +99,38 @@ void lancerEditeurMap() {
 
                 switch (e.key.keysym.sym) {
 
-                    case SDLK_p:
-
-                        mapGrid[5][5] = 'P';
+                    case SDLK_p: {
+                        // Placer 'P' à la position de la souris (unique sur la carte)
+                        int mx, my; SDL_GetMouseState(&mx, &my);
+                        int tx = mx / TILE; int ty = my / TILE;
+                        if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+                            // Nettoyer l'ancien 'P'
+                            for (int yy = 0; yy < MAP_H; yy++) {
+                                for (int xx = 0; xx < MAP_W; xx++) {
+                                    if (mapGrid[yy][xx] == 'P') mapGrid[yy][xx] = '.';
+                                }
+                            }
+                            mapGrid[ty][tx] = 'P';
+                        }
                         break;
+                    }
                     
-                    case SDKL_e:
-
-                        mapGrid[8][10] = 'E';
+                    case SDLK_e: {
+                        // Placer 'E' à la position de la souris (multiples autorisés)
+                        int mx, my; SDL_GetMouseState(&mx, &my);
+                        int tx = mx / TILE; int ty = my / TILE;
+                        if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+                            mapGrid[ty][tx] = 'E';
+                        }
                         break;
+                    }
                     
-                    case SDKL_s:
+                    case SDLK_s:
 
                         sauvegarderMap();
                         break;
                     
-                    case SDKL_ESCAPE:
+                    case SDLK_ESCAPE:
                         running = 0;
                         break;
                 }
@@ -101,9 +147,9 @@ void lancerEditeurMap() {
 
                 if (mapGrid[y][x] == '#')
                     SDL_SetRenderDrawColor(ren, 120, 120, 120, 255);
-                else if (mapGrid[y][x] == "P")
+                else if (mapGrid[y][x] == 'P')
                     SDL_SetRenderDrawColor(ren, 0, 180, 50, 255);
-                else if (mapGrid[y][x] == "E")
+                else if (mapGrid[y][x] == 'E')
                     SDL_SetRenderDrawColor(ren, 200, 40, 40, 255);
                 else 
                     SDL_SetRenderDrawColor(ren, 60, 60, 60, 255);
@@ -121,4 +167,11 @@ void lancerEditeurMap() {
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
+}
+
+// Point d'entrée de l'éditeur (exécutable séparé)
+int main(int argc, char *argv[]) {
+    (void)argc; (void)argv;
+    lancerEditeurMap();
+    return 0;
 }

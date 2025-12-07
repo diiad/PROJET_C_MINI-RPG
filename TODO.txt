@@ -1,0 +1,77 @@
+Mini RPG — Feuille de route (mise à jour 2025‑12‑07)
+
+Description rapide
+Le joueur choisit une classe (Guerrier/Archer/Mage) et affronte des mobs pour faire le meilleur score possible avant de mourir. Interface SDL (fenêtre), éditeur de cartes séparé.
+
+État actuel (résumé)
+- UI SDL de base OK: fenêtre + menu principal avec 4 boutons (Jouer / Highscores / Éditeur / Quitter) et libellés.
+- Sélection de classe: écran dédié, choix via clavier (1/2/3), stats appliquées au joueur (classes implémentées).
+- Éditeur de carte: opérationnel, sauvegarde dans assets/maps/map1.map, accessible depuis le menu (lance l’exécutable RPG_C_Editor).
+- Build: CMake produit 2 exécutables (RPG_C, RPG_C_Editor) dans le même dossier; lancement éditeur robuste.
+- Combat: logique console existante (combat.c) non intégrée à l’UI SDL (scène Combat encore vide).
+- Highscores: fichier présent mais pas de module de scores (chargement/tri/sauvegarde) ni affichage dédié.
+- Chargement de carte côté jeu: absent.
+
+À faire (priorisé)
+1) Combat en UI SDL
+   - Dessiner un HUD avec barres de vie joueur/ennemi (rectangles proportionnels).
+   - Boucle tour par tour: SPACE = attaque du joueur → délai → riposte ennemie → conditions victoire/défaite → retour menu.
+   - Migrer/remplacer les printf de combat.c par une version intégrée à la scène SDL.
+   - Intégrer agility (initiative/esquive simple) et range (portée) de base.
+
+2) Scores persistants (Top 5)
+   - Créer le module scores (include/scores.h, src/scores.c) avec API: scores_init(path), scores_submit(name, score), scores_count/scores_get, scores_save().
+   - Définir des règles de scoring (ex.: +100 par victoire, +bonus selon HP restants/série).
+   - En fin de partie: demander un nom (saisie clavier simple) puis enregistrer dans assets/highscores.txt.
+   - Scène Highscores: afficher le Top 5 (d’abord via message box, puis rendu dans la fenêtre si souhaité).
+
+3) UI SDL — améliorations
+   - Sélection de classe: afficher des libellés sur les 3 boutons (Guerrier/Archer/Mage) + indications 1/2/3.
+   - Étendre la petite police bitmap (ajouter glyphes manquants: A, M, chiffres 1–3, etc.) ou envisager SDL2_ttf plus tard.
+   - Menu: ajouter navigation à la souris (survol + clic) pour tous les boutons.
+   - Écrans de fin de partie: Victoire/Défaite avec options (Rejouer / Menu / Highscores).
+
+4) Intégration carte (après base UI)
+   - Créer un loader de carte (src/map_loader.c): lire assets/maps/map1.map, retourner la matrice tuiles + position P + liste des E.
+   - Utiliser la carte pour contraindre le combat (portée/ligne de vue simple, placement de départ).
+   - Option: afficher la carte en fond de la scène Combat.
+
+5) Nettoyage / hygiène
+   - Retirer l’ancienne UI console (src/ui.c, include/ui.h) du dépôt ou la marquer « legacy ».
+   - Supprimer/encadrer les printf dans le combat pour ne pas polluer l’UI SDL (laisser en debug si utile).
+   - Documenter les contrôles et l’organisation du projet dans un README.
+
+6) Optionnel (prévu)
+   - Scripting/chargement des classes depuis un fichier (JSON/INI) au lancement.
+   - Passage à SDL2_ttf pour un rendu texte plus propre et flexible (si besoin).
+   - Progression ennemis: paliers de difficulté, boss périodiques, équilibrage final.
+
+Répartition des rôles (mise à jour)
+• Personne 1 →
+  - Gestion des scènes SDL, intégration de la boucle de combat dans l’UI, nettoyage build. (✓ CMake + lancement éditeur)
+  - Implémentation du loader de carte.
+• Personne 2 →
+  - UI SDL: libellés, Highscores, écrans de fin, saisie du nom. Extension police bitmap ou choix SDL2_ttf.
+  - Menu: interactions souris.
+• Personne 3 →
+  - Modèle de classes et ennemis: ajustements stats; intégrer agility/range dans les calculs.
+  - Système de score: règles + persistance Top 5; équilibrage gameplay.
+
+Planification (suggestion par sprints)
+- Sprint 1: Combat SDL jouable + Top 5 persistant (minimum viable).
+- Sprint 2: Sélection de classe avec libellés + Highscores rendu dans la fenêtre.
+- Sprint 3: Loader de carte + portée/ligne de vue simplifiées.
+- Sprint 4: Équilibrage, polish, documentation finale.
+
+Checklist
+- [ ] Combat SDL: HUD barres de vie + tour par tour
+- [ ] Initiative (agility) et portée (range)
+- [ ] Module scores (init/submit/get/save)
+- [ ] Saisie du nom en fin de partie
+- [ ] Scène Highscores (Top 5) persistante
+- [ ] Libellés sur la sélection de classe (police étendue)
+- [ ] Loader de carte (.map) et intégration gameplay
+- [ ] Nettoyage ancienne UI console / README
+- [x] Menu SDL + lancement éditeur
+- [x] Classes de base + application au joueur
+- [x] CMake: binaires côte à côte + lancement éditeur robuste
