@@ -49,7 +49,7 @@ void afficherMenuClasses() {
     printf("==== CHOIX DES CLASSES ====\n");
     printf("1. Guerrier (Tank)\n");
     printf("2. Archer (Distance)\n");
-    printf("3. Mage (Dégât élevés)\n");
+    printf("3. Mage (Dégâts élevés)\n");
 }
 
 int choixClasse(){
@@ -82,5 +82,5 @@ void afficherFin(int score) {
 }
 
 int choixFin() {
-    
+    return lireChoix(1, 3);
 }
