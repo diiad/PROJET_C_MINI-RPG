@@ -13,7 +13,7 @@
 char mapGrid[MAP_H][MAP_W];
 
 void sauvegarderMap() {
-    // S'assurer que les dossiers existent
+    
 #if defined(_WIN32)
     _mkdir("assets");
     _mkdir("assets/maps");
@@ -100,11 +100,11 @@ void lancerEditeurMap() {
                 switch (e.key.keysym.sym) {
 
                     case SDLK_p: {
-                        // Placer 'P' à la position de la souris (unique sur la carte)
+                    
                         int mx, my; SDL_GetMouseState(&mx, &my);
                         int tx = mx / TILE; int ty = my / TILE;
                         if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
-                            // Nettoyer l'ancien 'P'
+                        
                             for (int yy = 0; yy < MAP_H; yy++) {
                                 for (int xx = 0; xx < MAP_W; xx++) {
                                     if (mapGrid[yy][xx] == 'P') mapGrid[yy][xx] = '.';
@@ -116,7 +116,7 @@ void lancerEditeurMap() {
                     }
                     
                     case SDLK_e: {
-                        // Placer 'E' à la position de la souris (multiples autorisés)
+                        
                         int mx, my; SDL_GetMouseState(&mx, &my);
                         int tx = mx / TILE; int ty = my / TILE;
                         if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
@@ -169,9 +169,10 @@ void lancerEditeurMap() {
     SDL_Quit();
 }
 
-// Point d'entrée de l'éditeur (exécutable séparé)
+
 int main(int argc, char *argv[]) {
     (void)argc; (void)argv;
     lancerEditeurMap();
     return 0;
+
 }
