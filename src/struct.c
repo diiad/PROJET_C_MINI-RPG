@@ -46,7 +46,7 @@ void initEnemies() {
 }
 
 
-//Pour afficher une entity (pourquoi pas ?)
+
 void showEntity(entity e) {
     printf("HP: %d | ATT: %d | DEF: %d | RANGE: %.1f\n", e.hp, e.attack, e.defense, e.range);
 }
