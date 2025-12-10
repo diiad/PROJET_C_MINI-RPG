@@ -13,8 +13,6 @@
 
 typedef enum { SC_MENU, SC_CLASS_SELECT, SC_COMBAT, SC_HIGHSCORES, SC_QUIT } Scene;
 
-// --- Mini police bitmap 5x7 (seulement les lettres nécessaires) ---
-// Chaque glyphe est défini par 7 lignes de 5 caractères ('#' = pixel, '.' = vide)
 typedef struct { char ch; const char *rows[7]; } Glyph5x7;
 
 static const Glyph5x7 FONT_5x7[] = {
@@ -106,7 +104,6 @@ static void draw_text_centered_in_rect(SDL_Renderer *ren, SDL_Rect rect, int sca
     draw_text_5x7(ren, tx, ty, scale, r, g, b, a, text);
 }
 
-// --- Lancement robuste de l'éditeur depuis n'importe quel répertoire de travail ---
 static void launch_editor(SDL_Window* win) {
 #ifdef _WIN32
     const char* exeName = "RPG_C_Editor.exe";
@@ -114,12 +111,11 @@ static void launch_editor(SDL_Window* win) {
     const char* exeName = "RPG_C_Editor";
 #endif
 
-    // Construit des chemins possibles vers l'exécutable de l'éditeur
+
     char cmd[1024] = {0};
     int launched = 0;
 
-    // 1) D'abord, tenter via le répertoire de l'exécutable courant
-    char* base = SDL_GetBasePath(); // ex: .../cmake-build-debug/
+    char* base = SDL_GetBasePath(); 
     if (base) {
         char path1[768];
         snprintf(path1, sizeof(path1), "%s%s", base, exeName);
@@ -137,7 +133,7 @@ static void launch_editor(SDL_Window* win) {
     }
 
     if (!launched) {
-        // 2) Tenter dans le répertoire courant
+        
 #ifdef _WIN32
         snprintf(cmd, sizeof(cmd), "%s", exeName);
 #else
@@ -150,7 +146,7 @@ static void launch_editor(SDL_Window* win) {
     }
 
     if (!launched) {
-        // 3) Tenter un chemin de build par défaut (utile si le WD est la racine du projet)
+        
 #ifdef _WIN32
         snprintf(cmd, sizeof(cmd), "cmake-build-debug/%s", exeName);
 #else
@@ -205,7 +201,7 @@ int run_game(void) {
         return 1;
     }
 
-    // Classe sélectionnée par défaut et joueur associé
+    
     PlayerClass selectedClass = CLASS_WARRIOR;
     entity player;
     apply_class_to_entity(&player, selectedClass);
@@ -221,13 +217,13 @@ int run_game(void) {
                 if (scene == SC_MENU) {
                     switch (e.key.keysym.sym) {
                         case SDLK_1:
-                            // Appliquer la classe choisie avant de démarrer le combat
+                            
                             apply_class_to_entity(&player, selectedClass);
                             scene = SC_COMBAT;
                             break;
                         case SDLK_2:
                             scene = SC_HIGHSCORES;
-                            // Affichage provisoire sans module de scores
+                            
                             SDL_ShowSimpleMessageBox(
                                 SDL_MESSAGEBOX_INFORMATION,
                                 "Highscores",
@@ -236,21 +232,21 @@ int run_game(void) {
                             );
                             break;
                         case SDLK_3:
-                            // Lancer l'éditeur de carte (exécutable séparé)
+                            
                             launch_editor(win);
                             break;
                         case SDLK_4:
                             running = 0;
                             break;
-                        case SDLK_c: // SDL2 ne définit que les lettres en minuscules (Shift via mod)
-                            // Scène de sélection de classe
+                        case SDLK_c: 
+                            
                             scene = SC_CLASS_SELECT;
                             break;
                         default:
                             break;
                     }
                 } else if (scene == SC_COMBAT) {
-                    // Pour le moment, ESC pour revenir au menu
+                
                     if (e.key.keysym.sym == SDLK_ESCAPE) scene = SC_MENU;
                 } else if (scene == SC_HIGHSCORES) {
                     if (e.key.keysym.sym == SDLK_ESCAPE) scene = SC_MENU;
@@ -284,12 +280,12 @@ int run_game(void) {
             }
         }
 
-        // Rendu simple selon la scène
+        
         if (scene == SC_MENU) {
             SDL_SetRenderDrawColor(ren, 30, 30, 60, 255);
             SDL_RenderClear(ren);
 
-            // Dessiner 4 "boutons" rectangles pour le menu (sans texte)
+        
             SDL_Rect btn1 = { 360, 120, 240, 50 }; // Jouer
             SDL_Rect btn2 = { 360, 190, 240, 50 }; // Highscores
             SDL_Rect btn3 = { 360, 260, 240, 50 }; // Editeur
@@ -300,8 +296,8 @@ int run_game(void) {
             SDL_SetRenderDrawColor(ren, 160, 80, 80, 255); SDL_RenderFillRect(ren, &btn3);
             SDL_SetRenderDrawColor(ren, 120, 120, 120, 255); SDL_RenderFillRect(ren, &btn4);
 
-            // Libellés sur les boutons (mini police bitmap 5x7)
-            int scale = 3; // hauteur ~ 21px, adapté à 50px
+            
+            int scale = 3; 
             draw_text_centered_in_rect(ren, btn1, scale, 255, 255, 255, 255, "Jouer");
             draw_text_centered_in_rect(ren, btn2, scale, 255, 255, 255, 255, "Highscores");
             draw_text_centered_in_rect(ren, btn3, scale, 255, 255, 255, 255, "Editeur");
@@ -310,7 +306,7 @@ int run_game(void) {
             SDL_SetRenderDrawColor(ren, 20, 20, 40, 255);
             SDL_RenderClear(ren);
 
-            // Trois rectangles représentant les classes 1..3
+            
             SDL_Rect c1 = { 200, 120, 180, 80 }; // Guerrier
             SDL_Rect c2 = { 390, 120, 180, 80 }; // Archer
             SDL_Rect c3 = { 580, 120, 180, 80 }; // Mage
