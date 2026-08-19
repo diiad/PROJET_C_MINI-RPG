@@ -1,339 +1,230 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_messagebox.h>
-#include <SDL2/SDL_filesystem.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <string.h>
 #include <ctype.h>
 
 #include "../include/interface.h"
-#include "../include/struct.h"
+#include "../include/jeu.h"
+#include "../include/map.h"
+#include "../include/scores.h"
 #include "../include/classes.h"
 
-typedef enum { SC_MENU, SC_CLASS_SELECT, SC_COMBAT, SC_HIGHSCORES, SC_QUIT } Scene;
+int interface_init(SDL_Window **fenetre, SDL_Renderer **rendu) {
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        printf("Erreur SDL_Init: %s\n", SDL_GetError());
+        return 0;
+    }
 
-// --- Mini police bitmap 5x7 (seulement les lettres nécessaires) ---
-// Chaque glyphe est défini par 7 lignes de 5 caractères ('#' = pixel, '.' = vide)
+    *fenetre = SDL_CreateWindow("RPG C - Projet",
+                                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                800, 600,
+                                SDL_WINDOW_SHOWN);
+    if (!*fenetre) {
+        printf("Erreur SDL_CreateWindow: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 0;
+    }
+
+    *rendu = SDL_CreateRenderer(*fenetre, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!*rendu) {
+        printf("Erreur SDL_CreateRenderer: %s\n", SDL_GetError());
+        SDL_DestroyWindow(*fenetre);
+        SDL_Quit();
+        return 0;
+    }
+
+    return 1;
+}
+
+void interface_fermer(SDL_Window *fenetre, SDL_Renderer *rendu) {
+    if (rendu) SDL_DestroyRenderer(rendu);
+    if (fenetre) SDL_DestroyWindow(fenetre);
+    SDL_Quit();
+}
+
 typedef struct { char ch; const char *rows[7]; } Glyph5x7;
 
 static const Glyph5x7 FONT_5x7[] = {
-    // C
-    {'C', {"#####","#....","#....","#....","#....","#....","#####"}},
-    // D
-    {'D', {"####.","#...#","#...#","#...#","#...#","#...#","####."}},
-    // E
-    {'E', {"#####","#....","#####","#....","#....","#....","#####"}},
-    // G
-    {'G', {"#####","#....","#....","#.###","#...#","#...#","#####"}},
-    // H
-    {'H', {"#...#","#...#","#...#","#####","#...#","#...#","#...#"}},
-    // I
-    {'I', {"#####","..#..","..#..","..#..","..#..","..#..","#####"}},
-    // J
-    {'J', {"....#","....#","....#","....#","#...#","#...#","#####"}},
-    // O
-    {'O', {"#####","#...#","#...#","#...#","#...#","#...#","#####"}},
-    // Q
-    {'Q', {"#####","#...#","#...#","#...#","#.#.#","#..##","####."}},
-    // R
-    {'R', {"#####","#...#","#...#","#####","#..#.","#...#","#...#"}},
-    // S
-    {'S', {"#####","#....","#....","#####","....#","....#","#####"}},
-    // T
-    {'T', {"#####","..#..","..#..","..#..","..#..","..#..","..#.."}},
-    // U
-    {'U', {"#...#","#...#","#...#","#...#","#...#","#...#","#####"}},
-    // Espace
-    {' ', {".....",".....",".....",".....",".....",".....","....."}},
+    {'A', {"..#..",".#.#.","#...#","#####","#...#","#...#","#...#"}}, {'B', {"####.","#...#","#...#","####.","#...#","#...#","####."}},
+    {'C', {"#####","#....","#....","#....","#....","#....","#####"}}, {'D', {"####.","#...#","#...#","#...#","#...#","#...#","####."}},
+    {'E', {"#####","#....","#####","#....","#....","#....","#####"}}, {'F', {"#####","#....","#####","#....","#....","#....","#...."}},
+    {'G', {"#####","#....","#....","#.###","#...#","#...#","#####"}}, {'H', {"#...#","#...#","#...#","#####","#...#","#...#","#...#"}},
+    {'I', {"#####","..#..","..#..","..#..","..#..","..#..","#####"}}, {'J', {"...##","....#","....#","....#","#...#","#...#","#####"}},
+    {'K', {"#...#","#..#.","#.#..","##...","#.#..","#..#.","#...#"}}, {'L', {"#....","#....","#....","#....","#....","#....","#####"}},
+    {'M', {"#...#","##.##","#.#.#","#.#.#","#...#","#...#","#...#"}}, {'N', {"#...#","##..#","#.#.#","#..##","#...#","#...#","#...#"}},
+    {'O', {"#####","#...#","#...#","#...#","#...#","#...#","#####"}}, {'P', {"####.","#...#","#...#","####.","#....","#....","#...."}},
+    {'Q', {"#####","#...#","#...#","#...#","#.#.#","#..##","####."}}, {'R', {"####.","#...#","#...#","####.","#.#..","#..#.","#...#"}},
+    {'S', {"#####","#....","#....","#####","....#","....#","#####"}}, {'T', {"#####","..#..","..#..","..#..","..#..","..#..","..#.."}},
+    {'U', {"#...#","#...#","#...#","#...#","#...#","#...#","#####"}}, {'V', {"#...#","#...#","#...#","#...#",".#.#.","..#..","..#.."}},
+    {'W', {"#...#","#...#","#...#","#.#.#","#.#.#","##.##","#...#"}}, {'X', {"#...#",".#.#.","..#..","..#..",".#.#.","#...#","#...#"}},
+    {'Y', {"#...#",".#.#.","..#..","..#..","..#..","..#..","..#.."}}, {'Z', {"#####","....#","...#.","..#..",".#...","#....","#####"}},
+    {'0', {"#####","#...#","#..##","#.#.#","##..#","#...#","#####"}}, {'1', {"..#..",".##..","..#..","..#..","..#..","..#..","#####"}},
+    {'2', {"#####","....#","...#.","..#..",".#...","#....","#####"}}, {'3', {"#####","....#","....#","#####","....#","....#","#####"}},
+    {'4', {"#...#","#...#","#...#","#####","....#","....#","....#"}}, {'5', {"#####","#....","#....","#####","....#","....#","#####"}},
+    {'6', {"#####","#....","#....","#####","#...#","#...#","#####"}}, {'7', {"#####","....#","...#.","..#..",".#...","#....","#...."}},
+    {'8', {"#####","#...#","#...#","#####","#...#","#...#","#####"}}, {'9', {"#####","#...#","#...#","#####","....#","....#","#####"}},
+    {'.', {".....",".....",".....",".....",".....","..#..","..#.."}}, {',', {".....",".....",".....",".....","..#..","..#..",".#..."}},
+    {':', {".....","..#..",".....",".....","..#..",".....","....."}}, {'-', {".....",".....",".....","#####",".....",".....","....."}},
+    {'/', {"....#","...#.","..#..",".#...","#....",".....","....."}}, {'!', {"..#..","..#..","..#..","..#..","..#..",".....","..#.."}},
+    {'?', {".###.","#...#","....#","...#.","..#..",".....","..#.."}}, {')', {".#...","..#..","...#.","...#.","...#.","..#..",".#..."}},
+    {'(', {"...#.","..#..",".#...",".#...",".#...","..#..","...#."}}, {'[', {"#####","#....","#....","#....","#....","#....","#####"}},
+    {']', {"#####","....#","....#","....#","....#","....#","#####"}}, {' ', {".....",".....",".....",".....",".....",".....","....."}},
 };
 
-static const Glyph5x7* find_glyph(char c) {
+static const Glyph5x7* trouver_glyphe(char c) {
     size_t n = sizeof(FONT_5x7)/sizeof(FONT_5x7[0]);
-    for (size_t i = 0; i < n; ++i) {
-        if (FONT_5x7[i].ch == c) return &FONT_5x7[i];
-    }
+    for (size_t i = 0; i < n; ++i) if (FONT_5x7[i].ch == c) return &FONT_5x7[i];
     return NULL;
 }
 
-static void draw_char_5x7(SDL_Renderer *ren, int x, int y, int scale,
-                          Uint8 r, Uint8 g, Uint8 b, Uint8 a, char c) {
-    const Glyph5x7 *gph = find_glyph(c);
-    if (!gph) return;
-    SDL_SetRenderDrawColor(ren, r, g, b, a);
+static void dessiner_char(SDL_Renderer *ren, int x, int y, int echelle, Uint8 r, Uint8 g, Uint8 b, char c) {
+    const Glyph5x7 *glyphe = trouver_glyphe(c);
+    if (!glyphe) return;
+
+    SDL_SetRenderDrawColor(ren, r, g, b, 255);
     for (int row = 0; row < 7; ++row) {
-        const char *line = gph->rows[row];
+        const char *ligne = glyphe->rows[row];
         for (int col = 0; col < 5; ++col) {
-            if (line[col] == '#') {
-                SDL_Rect px = { x + col*scale, y + row*scale, scale, scale };
-                SDL_RenderFillRect(ren, &px);
+            if (ligne[col] == '#') {
+                SDL_Rect pixel = { x + col*echelle, y + row*echelle, echelle, echelle };
+                SDL_RenderFillRect(ren, &pixel);
             }
         }
     }
 }
 
-static void draw_text_5x7(SDL_Renderer *ren, int x, int y, int scale,
-                          Uint8 r, Uint8 g, Uint8 b, Uint8 a, const char *text) {
-    if (!text) return;
-    int cursor = 0;
-    for (size_t i = 0; i < strlen(text); ++i) {
-        char c = (char)toupper((unsigned char)text[i]);
-        const Glyph5x7 *gph = find_glyph(c);
-        if (gph) {
-            draw_char_5x7(ren, x + cursor, y, scale, r, g, b, a, c);
-            cursor += 5*scale; // glyph width
-        }
-        // lettre spacing (1 colonne vide)
-        cursor += 1*scale;
+static void dessiner_texte(SDL_Renderer *ren, int x, int y, int echelle, Uint8 r, Uint8 g, Uint8 b, const char *texte) {
+    if (!texte) return;
+    int curseur = 0;
+    for (size_t i = 0; i < strlen(texte); ++i) {
+        char c = (char)toupper((unsigned char)texte[i]);
+        dessiner_char(ren, x + curseur, y, echelle, r, g, b, c);
+        curseur += 6 * echelle;
     }
 }
 
-static void draw_text_centered_in_rect(SDL_Renderer *ren, SDL_Rect rect, int scale,
-                                       Uint8 r, Uint8 g, Uint8 b, Uint8 a,
-                                       const char *text) {
-    if (!text) return;
-    // Calcul largeur du texte
-    int count = 0;
-    for (size_t i = 0; i < strlen(text); ++i) {
-        if (find_glyph((char)toupper((unsigned char)text[i]))) count++;
-    }
-    int char_w = 5*scale;
-    int spacing = 1*scale;
-    int text_w = count*char_w + (count>0 ? (count)*spacing : 0);
-    int text_h = 7*scale;
-    int tx = rect.x + (rect.w - text_w)/2;
-    int ty = rect.y + (rect.h - text_h)/2;
-    draw_text_5x7(ren, tx, ty, scale, r, g, b, a, text);
+static void dessiner_texte_centre(SDL_Renderer *ren, SDL_Rect rect, int echelle, Uint8 r, Uint8 g, Uint8 b, const char *texte) {
+    if (!texte) return;
+    int largeur = strlen(texte) * 6 * echelle;
+    int hauteur = 7 * echelle;
+    int tx = rect.x + (rect.w - largeur)/2;
+    int ty = rect.y + (rect.h - hauteur)/2;
+    dessiner_texte(ren, tx, ty, echelle, r, g, b, texte);
 }
 
-// --- Lancement robuste de l'éditeur depuis n'importe quel répertoire de travail ---
-static void launch_editor(SDL_Window* win) {
-#ifdef _WIN32
-    const char* exeName = "RPG_C_Editor.exe";
-#else
-    const char* exeName = "RPG_C_Editor";
-#endif
+static void dessiner_barre_vie(SDL_Renderer *ren, int x, int y, int w, int h, int hp, int maxHp) {
+    SDL_Rect fond = {x, y, w, h};
+    SDL_SetRenderDrawColor(ren, 70, 0, 0, 255);
+    SDL_RenderFillRect(ren, &fond);
 
-    // Construit des chemins possibles vers l'exécutable de l'éditeur
-    char cmd[1024] = {0};
-    int launched = 0;
+    if (maxHp <= 0) maxHp = 1;
+    float ratio = (float)hp / (float)maxHp;
+    if (ratio < 0.0f) ratio = 0.0f;
+    if (ratio > 1.0f) ratio = 1.0f;
 
-    // 1) D'abord, tenter via le répertoire de l'exécutable courant
-    char* base = SDL_GetBasePath(); // ex: .../cmake-build-debug/
-    if (base) {
-        char path1[768];
-        snprintf(path1, sizeof(path1), "%s%s", base, exeName);
-        SDL_free(base);
+    SDL_Rect barre = {x, y, (int)(w * ratio), h};
+    if(ratio > 0.5f) SDL_SetRenderDrawColor(ren, 0, 200, 0, 255);
+    else if(ratio > 0.2f) SDL_SetRenderDrawColor(ren, 200, 200, 0, 255);
+    else SDL_SetRenderDrawColor(ren, 200, 0, 0, 255);
 
-#ifdef _WIN32
-        snprintf(cmd, sizeof(cmd), "\"%s\"", path1);
-#else
-        snprintf(cmd, sizeof(cmd), "\"%s\"", path1);
-#endif
-        int rc = system(cmd);
-        if (rc == 0) {
-            launched = 1;
-        }
-    }
-
-    if (!launched) {
-        // 2) Tenter dans le répertoire courant
-#ifdef _WIN32
-        snprintf(cmd, sizeof(cmd), "%s", exeName);
-#else
-        snprintf(cmd, sizeof(cmd), "./%s", exeName);
-#endif
-        int rc = system(cmd);
-        if (rc == 0) {
-            launched = 1;
-        }
-    }
-
-    if (!launched) {
-        // 3) Tenter un chemin de build par défaut (utile si le WD est la racine du projet)
-#ifdef _WIN32
-        snprintf(cmd, sizeof(cmd), "cmake-build-debug/%s", exeName);
-#else
-        snprintf(cmd, sizeof(cmd), "\"cmake-build-debug/%s\"", exeName);
-#endif
-        int rc = system(cmd);
-        if (rc == 0) {
-            launched = 1;
-        }
-    }
-
-    if (!launched) {
-        SDL_ShowSimpleMessageBox(
-            SDL_MESSAGEBOX_ERROR,
-            "Editeur introuvable",
-            "Impossible de lancer l'editeur.\n"
-            "Vérifiez que la cible 'RPG_C_Editor' est compilée (build),\n"
-            "et que l'exécutable se trouve à côté du jeu (cmake-build-debug).",
-            win
-        );
-    }
+    SDL_RenderFillRect(ren, &barre);
+    SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
+    SDL_RenderDrawRect(ren, &fond);
 }
 
-int run_game(void) {
-    srand((unsigned)time(NULL));
-    initEnemies();
+void interface_dessiner_tout(SDL_Renderer *ren) {
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    SDL_RenderClear(ren);
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
-        fprintf(stderr, "SDL_Init error: %s\n", SDL_GetError());
-        return 1;
+    if (g_scene == SCENE_MENU) {
+        SDL_SetRenderDrawColor(ren, 30, 30, 60, 255);
+        SDL_RenderClear(ren);
+
+        SDL_Rect b1={360,120,240,50}, b2={360,190,240,50}, b3={360,260,240,50}, b4={360,330,240,50};
+        SDL_SetRenderDrawColor(ren, 80, 80, 160, 255); SDL_RenderFillRect(ren, &b1);
+        SDL_SetRenderDrawColor(ren, 80, 160, 80, 255); SDL_RenderFillRect(ren, &b2);
+        SDL_SetRenderDrawColor(ren, 160, 80, 80, 255); SDL_RenderFillRect(ren, &b3);
+        SDL_SetRenderDrawColor(ren, 120, 120, 120, 255); SDL_RenderFillRect(ren, &b4);
+
+        dessiner_texte_centre(ren, b1, 3, 255,255,255, "1. JOUER");
+        dessiner_texte_centre(ren, b2, 3, 255,255,255, "2. SCORES");
+        dessiner_texte_centre(ren, b3, 3, 255,255,255, "3. EDITEUR");
+        dessiner_texte_centre(ren, b4, 3, 255,255,255, "4. QUITTER");
+
+        char buf[128];
+        snprintf(buf, 128, "CLASSE: %s  -  [C] CHANGER", g_joueur.name);
+        dessiner_texte(ren, 20, 500, 2, 255, 255, 0, buf);
     }
-
-    SDL_Window *win = SDL_CreateWindow(
-        "MINI RPG",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        960, 540,
-        SDL_WINDOW_SHOWN
-    );
-    if (!win) {
-        fprintf(stderr, "SDL_CreateWindow error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
+    else if (g_scene == SCENE_EXPLORATION) {
+        map_render(ren);
+        dessiner_texte(ren, 10, 10, 2, 255, 255, 255, "EXPLORATION (UTILISEZ LES FLECHES)");
     }
+    else if (g_scene == SCENE_COMBAT) {
+        SDL_SetRenderDrawColor(ren, 20, 20, 20, 255);
+        SDL_RenderClear(ren);
 
-    SDL_Renderer *ren = SDL_CreateRenderer(
-        win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-    );
-    if (!ren) {
-        fprintf(stderr, "SDL_CreateRenderer error: %s\n", SDL_GetError());
-        SDL_DestroyWindow(win);
-        SDL_Quit();
-        return 1;
-    }
+        dessiner_texte(ren, 50, 350, 2, 255, 255, 255, g_joueur.name);
+        dessiner_barre_vie(ren, 50, 380, 200, 20, g_joueur.currentHp, g_joueur.maxHealth);
 
-    // Classe sélectionnée par défaut et joueur associé
-    PlayerClass selectedClass = CLASS_WARRIOR;
-    entity player;
-    apply_class_to_entity(&player, selectedClass);
+        char txtHp[32]; snprintf(txtHp, 32, "%d / %d", g_joueur.currentHp, g_joueur.maxHealth);
+        dessiner_texte(ren, 50, 410, 2, 200, 200, 200, txtHp);
 
-    int running = 1;
-    Scene scene = SC_MENU;
+        dessiner_texte(ren, 600, 50, 2, 255, 100, 100, g_ennemiActuel.name);
+        dessiner_barre_vie(ren, 600, 80, 200, 20, g_ennemiActuel.currentHp, g_ennemiActuel.maxHealth);
 
-    while (running) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) { running = 0; break; }
-            if (e.type == SDL_KEYDOWN) {
-                if (scene == SC_MENU) {
-                    switch (e.key.keysym.sym) {
-                        case SDLK_1:
-                            // Appliquer la classe choisie avant de démarrer le combat
-                            apply_class_to_entity(&player, selectedClass);
-                            scene = SC_COMBAT;
-                            break;
-                        case SDLK_2:
-                            scene = SC_HIGHSCORES;
-                            // Affichage provisoire sans module de scores
-                            SDL_ShowSimpleMessageBox(
-                                SDL_MESSAGEBOX_INFORMATION,
-                                "Highscores",
-                                "Top 5: (à venir)\nAjoutez le module scores pour persister les résultats.",
-                                win
-                            );
-                            break;
-                        case SDLK_3:
-                            // Lancer l'éditeur de carte (exécutable séparé)
-                            launch_editor(win);
-                            break;
-                        case SDLK_4:
-                            running = 0;
-                            break;
-                        case SDLK_c: // SDL2 ne définit que les lettres en minuscules (Shift via mod)
-                            // Scène de sélection de classe
-                            scene = SC_CLASS_SELECT;
-                            break;
-                        default:
-                            break;
-                    }
-                } else if (scene == SC_COMBAT) {
-                    // Pour le moment, ESC pour revenir au menu
-                    if (e.key.keysym.sym == SDLK_ESCAPE) scene = SC_MENU;
-                } else if (scene == SC_HIGHSCORES) {
-                    if (e.key.keysym.sym == SDLK_ESCAPE) scene = SC_MENU;
-                } else if (scene == SC_CLASS_SELECT) {
-                    switch (e.key.keysym.sym) {
-                        case SDLK_1:
-                            selectedClass = CLASS_WARRIOR;
-                            apply_class_to_entity(&player, selectedClass);
-                            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Classe", "Classe choisie: Guerrier", win);
-                            scene = SC_MENU;
-                            break;
-                        case SDLK_2:
-                            selectedClass = CLASS_ARCHER;
-                            apply_class_to_entity(&player, selectedClass);
-                            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Classe", "Classe choisie: Archer", win);
-                            scene = SC_MENU;
-                            break;
-                        case SDLK_3:
-                            selectedClass = CLASS_MAGE;
-                            apply_class_to_entity(&player, selectedClass);
-                            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Classe", "Classe choisie: Mage", win);
-                            scene = SC_MENU;
-                            break;
-                        case SDLK_ESCAPE:
-                            scene = SC_MENU;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
+        SDL_Rect boiteLog = {200, 200, 560, 60};
+        SDL_SetRenderDrawColor(ren, 50, 50, 80, 255);
+        SDL_RenderDrawRect(ren, &boiteLog);
+        dessiner_texte_centre(ren, boiteLog, 2, 255, 255, 255, g_logCombat);
+
+        if (g_etatCombat == COMBAT_TOUR_JOUEUR) {
+            SDL_Rect menuRect = { 350, 450, 260, 80 };
+            SDL_SetRenderDrawColor(ren, 40, 40, 80, 255); SDL_RenderFillRect(ren, &menuRect);
+            SDL_SetRenderDrawColor(ren, 255, 255, 255, 255); SDL_RenderDrawRect(ren, &menuRect);
+
+            char buf[64];
+            snprintf(buf, 64, "1. %s", g_joueur.moves[0].id ? g_joueur.moves[0].name : "---");
+            dessiner_texte(ren, 360, 460, 2, 255, 255, 255, buf);
+
+            snprintf(buf, 64, "2. %s", g_joueur.moves[1].id ? g_joueur.moves[1].name : "---");
+            dessiner_texte(ren, 360, 485, 2, 200, 255, 200, buf);
+
+            snprintf(buf, 64, "3. %s", g_joueur.moves[2].id ? g_joueur.moves[2].name : "---");
+            dessiner_texte(ren, 360, 510, 2, 200, 255, 200, buf);
         }
+    }
+    else if (g_scene == SCENE_SCORES) {
+        SDL_SetRenderDrawColor(ren, 20, 50, 20, 255);
+        SDL_RenderClear(ren);
 
-        // Rendu simple selon la scène
-        if (scene == SC_MENU) {
-            SDL_SetRenderDrawColor(ren, 30, 30, 60, 255);
-            SDL_RenderClear(ren);
+        dessiner_texte(ren, 50, 50, 3, 255, 215, 0, "MEILLEURS SCORES");
 
-            // Dessiner 4 "boutons" rectangles pour le menu (sans texte)
-            SDL_Rect btn1 = { 360, 120, 240, 50 }; // Jouer
-            SDL_Rect btn2 = { 360, 190, 240, 50 }; // Highscores
-            SDL_Rect btn3 = { 360, 260, 240, 50 }; // Editeur
-            SDL_Rect btn4 = { 360, 330, 240, 50 }; // Quitter
-
-            SDL_SetRenderDrawColor(ren, 80, 80, 160, 255); SDL_RenderFillRect(ren, &btn1);
-            SDL_SetRenderDrawColor(ren, 80, 160, 80, 255); SDL_RenderFillRect(ren, &btn2);
-            SDL_SetRenderDrawColor(ren, 160, 80, 80, 255); SDL_RenderFillRect(ren, &btn3);
-            SDL_SetRenderDrawColor(ren, 120, 120, 120, 255); SDL_RenderFillRect(ren, &btn4);
-
-            // Libellés sur les boutons (mini police bitmap 5x7)
-            int scale = 3; // hauteur ~ 21px, adapté à 50px
-            draw_text_centered_in_rect(ren, btn1, scale, 255, 255, 255, 255, "Jouer");
-            draw_text_centered_in_rect(ren, btn2, scale, 255, 255, 255, 255, "Highscores");
-            draw_text_centered_in_rect(ren, btn3, scale, 255, 255, 255, 255, "Editeur");
-            draw_text_centered_in_rect(ren, btn4, scale, 255, 255, 255, 255, "Quitter");
-        } else if (scene == SC_CLASS_SELECT) {
-            SDL_SetRenderDrawColor(ren, 20, 20, 40, 255);
-            SDL_RenderClear(ren);
-
-            // Trois rectangles représentant les classes 1..3
-            SDL_Rect c1 = { 200, 120, 180, 80 }; // Guerrier
-            SDL_Rect c2 = { 390, 120, 180, 80 }; // Archer
-            SDL_Rect c3 = { 580, 120, 180, 80 }; // Mage
-
-            SDL_SetRenderDrawColor(ren, 120, 100, 60, 255); SDL_RenderFillRect(ren, &c1);
-            SDL_SetRenderDrawColor(ren, 80, 120, 80, 255);  SDL_RenderFillRect(ren, &c2);
-            SDL_SetRenderDrawColor(ren, 120, 80, 120, 255); SDL_RenderFillRect(ren, &c3);
-        } else if (scene == SC_COMBAT) {
-            SDL_SetRenderDrawColor(ren, 60, 30, 30, 255);
-            SDL_RenderClear(ren);
-        } else if (scene == SC_HIGHSCORES) {
-            SDL_SetRenderDrawColor(ren, 20, 50, 20, 255);
-            SDL_RenderClear(ren);
+        int count = scores_count();
+        if(count == 0) {
+            dessiner_texte(ren, 50, 120, 2, 200, 200, 200, "AUCUN SCORE.");
         } else {
-            SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-            SDL_RenderClear(ren);
+            for(int i=0; i<count; i++) {
+                char ligne[64];
+                HighscoreEntry e = scores_get(i);
+                snprintf(ligne, 64, "%d. %s : %d", i+1, e.playerName, e.scoreValue);
+                dessiner_texte(ren, 50, 120 + i*40, 2, 255, 255, 255, ligne);
+            }
         }
+        dessiner_texte(ren, 50, 450, 2, 200, 200, 200, "[ECHAP] RETOUR");
+    }
+    else if (g_scene == SCENE_SELECTION_CLASSE) {
+        SDL_SetRenderDrawColor(ren, 20, 20, 40, 255);
+        SDL_RenderClear(ren);
 
-        SDL_RenderPresent(ren);
+        dessiner_texte(ren, 50, 50, 3, 255, 255, 255, "CHOISIR UNE CLASSE (1-9)");
+
+        int count = get_class_count();
+        for(int i=0; i<count; i++) {
+            char ligne[64];
+            snprintf(ligne, 64, "%d. %s", i+1, get_class_name(i));
+            dessiner_texte(ren, 50, 120 + i*40, 2, 200, 200, 255, ligne);
+        }
     }
 
-    SDL_DestroyRenderer(ren);
-    SDL_DestroyWindow(win);
-    SDL_Quit();
-    return 0;
+    SDL_RenderPresent(ren);
 }

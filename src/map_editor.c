@@ -12,17 +12,18 @@
 
 char mapGrid[MAP_H][MAP_W];
 
+/* Sauvegarde de la map dans un fichier */
 void sauvegarderMap() {
-    // S'assurer que les dossiers existent
+    // au cas ou y'a pas de dossier
 #if defined(_WIN32)
-    _mkdir("assets");
-    _mkdir("assets/maps");
+    _mkdir("../assets");
+    _mkdir("../assets/maps");
 #else
-    mkdir("assets", 0777);
-    mkdir("assets/maps", 0777);
+    mkdir("../assets", 0777);
+    mkdir("../assets/maps", 0777);
 #endif
 
-    FILE *f = fopen("assets/maps/map1.map", "w");
+    FILE *f = fopen("../assets/maps/map1.map", "w");
     if(!f) {
         printf("Impossible d'ouvrir le fichier de sauvegarde.\n");
         return;
@@ -36,9 +37,10 @@ void sauvegarderMap() {
     }
 
     fclose(f);
-    printf("Carte sauvegardée dans assets/maps/map1.map\n");
+    printf("Carte sauvegardée dans assets/maps/map1.map\nRelancez le prendre pour que les modifications prennent effet.");
 }
 
+// Lance l'éditeur de carte
 void lancerEditeurMap() {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         printf("SDL_Init error: %s\n", SDL_GetError());
@@ -46,7 +48,7 @@ void lancerEditeurMap() {
     }
 
     SDL_Window *win = SDL_CreateWindow(
-        "Editeur de Carte - MINI RPG",
+        "Editeur de Carte - Pitié mettez nous 20/20",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         MAP_W * TILE, MAP_H * TILE,
         SDL_WINDOW_SHOWN
@@ -69,69 +71,70 @@ void lancerEditeurMap() {
 
     memset(mapGrid, '.', sizeof(mapGrid));
 
-    int running = 1;
-    SDL_Event e;
+    int isRunning = 1;
+    SDL_Event event;
 
-    while (running) {
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT)
-                running = 0;
+    while (isRunning) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT)
+                isRunning = 0;
 
-            if (e.type == SDL_MOUSEBUTTONDOWN) {
+            if (event.type == SDL_MOUSEBUTTONDOWN) {
 
-                int x = e.button.x / TILE;
-                int y = e.button.y / TILE;
+                int tileX = event.button.x / TILE;
+                int tileY = event.button.y / TILE;
 
-                if (x < 0 || x >= MAP_W || y < 0 || y >= MAP_H)
+                if (tileX < 0 || tileX >= MAP_W || tileY < 0 || tileY >= MAP_H)
                     continue;
 
-                if (e.button.button == SDL_BUTTON_LEFT) {
+                if (event.button.button == SDL_BUTTON_LEFT) {
 
-                    mapGrid[y][x] = '#';
+                    mapGrid[tileY][tileX] = '#';
                 }
-                else if (e.button.button == SDL_BUTTON_RIGHT) {
+                else if (event.button.button == SDL_BUTTON_RIGHT) {
 
-                    mapGrid[y][x] = '.';
+                    mapGrid[tileY][tileX] = '.';
                 }
             }
 
-            if (e.type == SDL_KEYDOWN) {
+            if (event.type == SDL_KEYDOWN) {
 
-                switch (e.key.keysym.sym) {
+                switch (event.key.keysym.sym) {
 
                     case SDLK_p: {
-                        // Placer 'P' à la position de la souris (unique sur la carte)
-                        int mx, my; SDL_GetMouseState(&mx, &my);
-                        int tx = mx / TILE; int ty = my / TILE;
-                        if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+                        // Point de départ du joueur avec p et
+                        //la position de la souris
+                        int mouseX, mouseY; SDL_GetMouseState(&mouseX, &mouseY);
+                        int tileX = mouseX / TILE; int tileY = mouseY / TILE;
+                        if (tileX >= 0 && tileX < MAP_W && tileY >= 0 && tileY < MAP_H) {
                             // Nettoyer l'ancien 'P'
                             for (int yy = 0; yy < MAP_H; yy++) {
                                 for (int xx = 0; xx < MAP_W; xx++) {
                                     if (mapGrid[yy][xx] == 'P') mapGrid[yy][xx] = '.';
                                 }
                             }
-                            mapGrid[ty][tx] = 'P';
+                            mapGrid[tileY][tileX] = 'P';
                         }
                         break;
                     }
-                    
+
                     case SDLK_e: {
-                        // Placer 'E' à la position de la souris (multiples autorisés)
-                        int mx, my; SDL_GetMouseState(&mx, &my);
-                        int tx = mx / TILE; int ty = my / TILE;
-                        if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
-                            mapGrid[ty][tx] = 'E';
+                        // Placer un ennemie avec e à la position de la souris
+                        int mouseX, mouseY; SDL_GetMouseState(&mouseX, &mouseY);
+                        int tileX = mouseX / TILE; int tileY = mouseY / TILE;
+                        if (tileX >= 0 && tileX < MAP_W && tileY >= 0 && tileY < MAP_H) {
+                            mapGrid[tileY][tileX] = 'E';
                         }
                         break;
                     }
-                    
+
                     case SDLK_s:
 
                         sauvegarderMap();
                         break;
-                    
+
                     case SDLK_ESCAPE:
-                        running = 0;
+                        isRunning = 0;
                         break;
                 }
             }
@@ -151,7 +154,7 @@ void lancerEditeurMap() {
                     SDL_SetRenderDrawColor(ren, 0, 180, 50, 255);
                 else if (mapGrid[y][x] == 'E')
                     SDL_SetRenderDrawColor(ren, 200, 40, 40, 255);
-                else 
+                else
                     SDL_SetRenderDrawColor(ren, 60, 60, 60, 255);
 
                 SDL_RenderFillRect(ren, &tile);
@@ -169,7 +172,7 @@ void lancerEditeurMap() {
     SDL_Quit();
 }
 
-// Point d'entrée de l'éditeur (exécutable séparé)
+
 int main(int argc, char *argv[]) {
     (void)argc; (void)argv;
     lancerEditeurMap();

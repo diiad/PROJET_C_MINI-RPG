@@ -22,12 +22,14 @@ endif()
 add_executable(RPG_C
         src/main.c
         src/struct.c
-        src/combat.c
         src/classes.c
+        src/moves.c
+        src/scores.c
+        src/map.c
+        src/jeu.c
         src/interface.c
-        include/struct.h
-        include/classes.h
-        include/interface.h
+        src/inputs.c
+        src/logic.c
 )
 
 # Éditeur de carte (exécutable séparé)

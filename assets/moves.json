@@ -1,0 +1,15 @@
+[
+  { "id": 1, "name": "Coup d'Epee", "type": 0, "power": 15, "accuracy": 95 },
+  { "id": 2, "name": "Tir Precis", "type": 0, "power": 12, "accuracy": 100 },
+  { "id": 3, "name": "Boule de Feu", "type": 2, "power": 25, "accuracy": 80 },
+  { "id": 4, "name": "Soin Mineur", "type": 1, "power": 30, "accuracy": 100 },
+  { "id": 5, "name": "Attaque Fourbe", "type": 0, "power": 20, "accuracy": 60 },
+  { "id": 6, "name": "Eclair", "type": 2, "power": 18, "accuracy": 90 },
+  { "id": 7, "name": "Lance Rocher", "type": 0, "power": 60, "accuracy": 30 },
+  { "id": 8, "name": "Suite de Fibonacci", "type": 0, "power": 80, "accuracy": 60 },
+  { "id": 9, "name": "Morphisme étale", "type": 0, "power": 80, "accuracy": 60 },
+  { "id": 10, "name": "Mesure de Hausdorff", "type": 0, "power": 80, "accuracy": 60 }
+
+
+]
+

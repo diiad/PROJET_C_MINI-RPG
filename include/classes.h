@@ -3,20 +3,28 @@
 
 #include "struct.h"
 
-typedef enum {
-    CLASS_WARRIOR = 0,
-    CLASS_ARCHER  = 1,
-    CLASS_MAGE    = 2,
-    CLASS_COUNT
-} PlayerClass;
+// Définition d'une classe
+typedef struct {
+    char  name[64];
+    int   hp;
+    int   attack;
+    int   defense;
+    float range;
+    int   agility;
+} ClassDef;
 
-// Retourne le nom lisible de la classe
-const char* class_name(PlayerClass c);
+// Chargement des classes depuis un j son
+int load_classes_from_file(const char* path);
 
-// Copie dans "out" les stats par défaut associées à la classe
-void get_class_entity(PlayerClass c, entity* out);
+// Infos sur les classes chargées
+int get_class_count(void);
+const ClassDef* get_class_def(int index);
+const char* get_class_name(int index);
 
-// Applique la classe au joueur (équivaut à get_class_entity + reset des PV)
-void apply_class_to_entity(entity* out, PlayerClass c);
+
+void apply_class_to_entity_by_index(entity* out, int index);
+
+// Copie les stats d'une classe par index
+void get_class_entity_by_index(int index, entity* out);
 
 #endif // CLASSES_H

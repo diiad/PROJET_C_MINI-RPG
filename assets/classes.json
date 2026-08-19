@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Guerrier",
+    "hp": 150, "attack": 20, "defense": 10, "range": 5.0, "agility": 5,
+    "moves": [1, 5, 7]
+  },
+  {
+    "name": "Archer",
+    "hp": 100, "attack": 25, "defense": 5, "range": 40.0, "agility": 15,
+    "moves": [2, 5, 4]
+  },
+  {
+    "name": "Mage",
+    "hp": 80, "attack": 30, "defense": 5, "range": 25.0, "agility": 10,
+    "moves": [3, 6, 4]
+  },
+  {
+    "name": "K.Tranchot",
+    "hp": 200, "attack": 30, "defense": 10, "range": 25.0, "agility": 10,
+    "moves": [8, 9, 10]
+  }
+]

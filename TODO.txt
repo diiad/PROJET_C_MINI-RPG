@@ -63,15 +63,69 @@ Planification (suggestion par sprints)
 - Sprint 3: Loader de carte + portée/ligne de vue simplifiées.
 - Sprint 4: Équilibrage, polish, documentation finale.
 
-Checklist
-- [ ] Combat SDL: HUD barres de vie + tour par tour
-- [ ] Initiative (agility) et portée (range)
-- [ ] Module scores (init/submit/get/save)
-- [ ] Saisie du nom en fin de partie
-- [ ] Scène Highscores (Top 5) persistante
-- [ ] Libellés sur la sélection de classe (police étendue)
-- [ ] Loader de carte (.map) et intégration gameplay
-- [ ] Nettoyage ancienne UI console / README
-- [x] Menu SDL + lancement éditeur
-- [x] Classes de base + application au joueur
-- [x] CMake: binaires côte à côte + lancement éditeur robuste
+=== ÉTAT ACTUEL ===
+
+[x] UI SDL de base : Fenêtre, Menu principal, Polices bitmap étendues.
+
+[x] Système de Classes : Chargement dynamique depuis assets/classes.json (HP, Atk, Def, Agi, Range).
+
+[x] Combat SDL (MVP) : - Boucle tour par tour fonctionnelle (Joueur vs Ennemi). - HUD avec barres de vie proportionnelles et couleurs dynamiques. - Log de combat textuel au centre de l'écran. - Conditions de Victoire et Défaite gérées.
+
+[x] Éditeur de carte : Exécutable séparé, sauvegarde dans assets/maps/map1.map.
+
+[x] Sélection de classe : Liste dynamique (1..9) via JSON.
+
+=== CE QU'IL MANQUE (PRIORISÉ) ===
+
+Système de Scores (Priorité Haute - Sprint 2)
+
+[ ] Créer le module (src/scores.c, include/scores.h).
+
+[ ] Logique : Structure Highscore (Nom + Score), lecture/écriture fichier (assets/highscores.txt).
+
+[ ] Gestion Top 5 : Algorithme de tri à l'insertion d'un nouveau score.
+
+[ ] Fin de partie : Écran de saisie du nom (Input clavier A-Z) après Victoire/Défaite.
+
+[ ] Scène Highscores : Remplacer la "Message Box" actuelle par un rendu SDL propre (liste des 5 meilleurs).
+
+Profondeur de Combat & Gameplay
+
+[ ] Migrer l'Esquive : Intégrer la logique d'Agilité (qui est dans combat.c) directement dans interface.c.
+
+[ ] Utiliser la Range : Donner l'initiative ou un tour gratuit si range joueur > range ennemi.
+
+[ ] Feedback : Faire clignoter l'écran (rouge) lors des dégâts reçus.
+
+[ ] Nettoyage : Supprimer ou vider combat.c une fois la logique transférée.
+
+Intégration Carte (Exploration)
+
+[ ] Loader de carte (src/map_loader.c) : Lire le fichier .map en mémoire.
+
+[ ] Gameplay : - Option A : Afficher la carte en fond pendant le combat. - Option B (Mieux) : Scène d'exploration simple (déplacer un point sur la grille) avant de lancer le combat.
+
+Polish UI & Ergonomie
+
+[ ] Souris : Ajouter la détection du clic (SDL_MOUSEBUTTONDOWN) sur les boutons du menu.
+
+[ ] Hover : Surligner le bouton quand la souris passe dessus.
+
+[ ] Audio : Ajouter des sons simples (SDL_Mixer) pour coup porté / victoire (Optionnel).
+
+=== PLAN D'EXÉCUTION (SPRINTS) ===
+
+Sprint 1 (Terminé) : Combat SDL jouable + Chargement JSON + HUD.
+
+Sprint 2 (Actuel) : Module Scores complet (Sauvegarde + Affichage Top 5 + Saisie Nom).
+
+Sprint 3 : Gameplay avancé (Esquive/Agilité réelle) + Intégration Carte + Souris Menu.
+
+Sprint 4 : Nettoyage code + Documentation (README) + Packaging final.
+
+=== CHECKLIST TECHNIQUE ===
+
+[x] Combat SDL : HUD barres de vie + tour par tour
+
+[x] Classes JSON : Parsing et application au joueur
+[ ] Module scores : Init / Submit / Save / Load

@@ -1,4 +1,4 @@
-#include "../include/struct.h"
+#include "../../include/struct.h"
 #include <stdio.h>
 #include <stdlib.h>
 
